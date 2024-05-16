@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
+using System.Text;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using CommandLine;
@@ -12,6 +14,30 @@ using SOAPHound.Enums;
 using SOAPHound.Processors;
 using System.Linq;
 
+
+public class ZipUtility
+{
+    public static void AddStringToZipArchive(string zipfile, string filename, string content)
+    {
+        // Delete the file if it exists.
+/*        if (File.Exists(zipfile))
+        {
+            FileStream zipToOpen = File.Open(zipfile, FileMode.OpenOrCreate);
+        }*/
+        using (FileStream zipToOpen = File.Open(zipfile, FileMode.OpenOrCreate))
+        {
+            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+            {
+                ZipArchiveEntry readmeEntry = archive.CreateEntry(filename);
+                using (StreamWriter writer = new StreamWriter(readmeEntry.Open()))
+                {
+                    writer.WriteLine(content);
+                    Console.WriteLine("Added " + filename +" to ZIP file: " + zipfile);
+                }
+            }
+        }
+    }
+}
 
 public static class RandomStringGenerator
 {
@@ -645,13 +671,14 @@ namespace SOAPHound
                     DisplayErrorMessage("Exception " + e.ToString() + "\nError parsing object with ObjectGUID :" + adobject.ObjectGUID.ToString());
                 }                
             }
+
+            string zipfile = outputDirectory + RandomStringGenerator.GenerateRandomString(32) + ".zip";
             outputUsers.meta.count = outputUsers.data.Count();
             if (outputUsers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputUsers);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputUsers.json -> ", r_header + ".json" );
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                //File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputUsers.json" , jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -659,9 +686,7 @@ namespace SOAPHound
             if (outputComputers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputComputers);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputComputers.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputComputers.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -669,9 +694,7 @@ namespace SOAPHound
             if (outputGroups.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGroups);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputGroups.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputGroups.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -679,9 +702,7 @@ namespace SOAPHound
             if (outputDomains.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputDomains);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputDomains.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputDomains.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -689,9 +710,7 @@ namespace SOAPHound
             if (outputGPOs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGPOs);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputGPOs.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputGPOs.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -699,9 +718,7 @@ namespace SOAPHound
             if (outputOUs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputOUs);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputOUs.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputOUs.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -709,9 +726,7 @@ namespace SOAPHound
             if (outputContainers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputContainers);
-                string r_header = RandomStringGenerator.GenerateRandomString(32);
-                Console.WriteLine("Renaming :" + header + "_outputContainers.json -> " + r_header + ".json");
-                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
+                ZipUtility.AddStringToZipArchive(zipfile, "outputContainers.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
             Console.WriteLine("-------------");
