@@ -12,6 +12,28 @@ using SOAPHound.Enums;
 using SOAPHound.Processors;
 using System.Linq;
 
+
+public static class RandomStringGenerator
+{
+    private static readonly Random Random = new Random();
+    private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    public static string GenerateRandomString(int length)
+    {
+        int maxAllowedCharsLength = AllowedChars.Length;
+        var randomBytes = new byte[length];
+        Random.NextBytes(randomBytes);
+
+        var chars = new char[length];
+        for (int i = 0; i < length; i++)
+        {
+            chars[i] = AllowedChars[randomBytes[i] % maxAllowedCharsLength];
+        }
+
+        return new string(chars);
+    }
+}
+
 namespace SOAPHound
 {
     public class Program
@@ -627,7 +649,9 @@ namespace SOAPHound
             if (outputUsers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputUsers);
-                File.WriteAllText(outputDirectory + header + "_outputUsers.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputUsers.json -> ", r_header + ".json" );
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -635,7 +659,9 @@ namespace SOAPHound
             if (outputComputers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputComputers);
-                File.WriteAllText(outputDirectory + header + "_outputComputers.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputComputers.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -643,7 +669,9 @@ namespace SOAPHound
             if (outputGroups.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGroups);
-                File.WriteAllText(outputDirectory + header + "_outputGroups.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputGroups.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -651,7 +679,9 @@ namespace SOAPHound
             if (outputDomains.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputDomains);
-                File.WriteAllText(outputDirectory + header + "_outputDomains.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputDomains.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -659,7 +689,9 @@ namespace SOAPHound
             if (outputGPOs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGPOs);
-                File.WriteAllText(outputDirectory + header + "_outputGPOs.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputGPOs.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -667,7 +699,9 @@ namespace SOAPHound
             if (outputOUs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputOUs);
-                File.WriteAllText(outputDirectory + header + "_outputOUs.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputOUs.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -675,11 +709,13 @@ namespace SOAPHound
             if (outputContainers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputContainers);
-                File.WriteAllText(outputDirectory + header + "_outputContainers.json", jsonString);
+                string r_header = RandomStringGenerator.GenerateRandomString(32);
+                Console.WriteLine("Renaming :" + header + "_outputContainers.json -> " + r_header + ".json");
+                File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
                 //Console.WriteLine(jsonString);
             }
             Console.WriteLine("-------------");
-            Console.WriteLine("Output files with prefix \"" + header + "\" generated in " + outputDirectory);
+            Console.WriteLine("Output files with random names generated in " + outputDirectory);
             Console.WriteLine("-------------");
 
         }
