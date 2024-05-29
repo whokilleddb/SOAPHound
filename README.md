@@ -45,6 +45,8 @@ Miscellaneous options:
   --help                   Display this help screen.
 ```
 
+# Start the Gatherer Server
+
 # Connection and authentication options
 
 ## Authentication
