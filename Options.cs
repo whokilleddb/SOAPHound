@@ -47,10 +47,13 @@ namespace SOAPHound
         [Option(HelpText = "Do not request LAPS related information", Default = false)]
         public bool NoLAPS { get; set; }
         //Output Options
-        [Option('o',"outputdirectory",HelpText = "Folder to output files to (full path needed)", Default = null)]
-        public string OutputDirectory { get; set; }
-        [Option('c',"cachefilename", HelpText = "Filename for the cache file (full path needed)", Default = null)]
+        
+        [Option('u',"exporturl",HelpText = "URL to post results to", Default = null)]
+        public string ExportUrl { get; set; }
+
+        [Option('c', "cachefilename", HelpText = "Filename for the cache file (full path needed)", Default = null)]
         public string CacheFileName { get; set; }
+        
         [Option(HelpText = "Create log file", Default = null )]
         public string LogFile { get; set; }
     }
