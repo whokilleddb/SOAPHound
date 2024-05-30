@@ -132,4 +132,3 @@ def gencache():
             return {'status': 'invalid id'}, 404
         else:
             return content
-    
