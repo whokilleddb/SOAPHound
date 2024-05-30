@@ -47,6 +47,8 @@ Miscellaneous options:
 
 # Start the Gatherer Server
 
+See `GathererServer/README.md` for instructions on how to start the server to gather exported logs.
+
 # Connection and authentication options
 
 ## Authentication
