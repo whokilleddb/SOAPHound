@@ -50,11 +50,11 @@ namespace SOAPHound
         
         [Option('u',"exporturl",HelpText = "URL to post results to", Default = null)]
         public string ExportUrl { get; set; }
-
-        [Option('c', "cachefilename", HelpText = "Filename for the cache file (full path needed)", Default = null)]
-        public string CacheFileName { get; set; }
         
         [Option(HelpText = "Create log file", Default = null )]
         public string LogFile { get; set; }
+
+        [Option('i', "cacheid",  HelpText = "CacheId to use to fetch from server", Default = null)]
+        public string CacheId { get; set; }
     }
 }

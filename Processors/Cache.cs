@@ -54,21 +54,51 @@ namespace SOAPHound.Processors
 
         }
 
-        public static void Deserialize(string path)
+        public static void Deserialize(string id, string exporturl)
         {
-            var json = File.ReadAllText(path);
+            if (string.IsNullOrEmpty(id)) {
+                Console.WriteLine("No Valid Cache ID found");
+                return;
+            }
+            string cache_json;
+            cache_json = PostToUrl.FetchCache(exporturl, id);
+            if (string.IsNullOrEmpty(cache_json))
+            {
+                Console.WriteLine("Failed to fetch Cache from "+ exporturl);
+                return;
+            }
+            var json = Base64Encoder.DecodeFromBase64(cache_json);
+            if (string.IsNullOrEmpty(json))
+            {
+                Console.WriteLine("Failed to decode cache id: " + id);
+                return;
+            }
+            // Console.WriteLine(cache_json);
+            // var json = File.ReadAllText(path);
             SerializeableCache tempCache = JsonConvert.DeserializeObject<SerializeableCache>(json, CacheContractResolver.Settings);
             Cache.ValueToIdCache = new Dictionary<string,string>(tempCache.ValueToIdCache, StringComparer.OrdinalIgnoreCase);
             Cache.IdToTypeCache = tempCache.IdToTypeCache;
         }
 
-        public static void Serialize(string path)
+        public static string Serialize(string exportURL)
         {
             SerializeableCache tempCache = new SerializeableCache();
             tempCache.IdToTypeCache = Cache.IdToTypeCache;
             tempCache.ValueToIdCache = Cache.ValueToIdCache;
             var serialized = JsonConvert.SerializeObject(tempCache);
-            File.WriteAllText(path, serialized);
+            string id = Randomizer.GenerateRandomString(32);
+            if (PostToUrl.PostMessage(exportURL + "/cache?id=" + id, serialized))
+            {
+                Console.WriteLine("Exported cache to: " + exportURL + "/cache?id="+id);
+                Console.WriteLine("CACHE ID: " + id);
+                
+            } else
+            {
+                Console.WriteLine("Failed to export cache to: " + exportURL + "/cache");
+                id = null;
+            }
+            // File.WriteAllText(path, serialized);
+            return id;
         }
 
         public static Dictionary<string, Label> IdToTypeCache { get; private set; }

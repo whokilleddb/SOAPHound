@@ -13,52 +13,6 @@ using SOAPHound.ADWS;
 using SOAPHound.Enums;
 using SOAPHound.Processors;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Net.Security;
-using System.Security.Cryptography;
-using System.Windows.Media.Animation;
-
-class PostToUrl
-{
-    public static bool PostMessage(string url, string jsonStr)
-    {
-        try
-        {
-            using (HttpClientHandler handler = new HttpClientHandler())
-            {
-                // Bypass SSL certificate validation (for testing purposes only)
-                handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
-
-                using (HttpClient client = new HttpClient(handler))
-                {
-                    StringContent content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
-                    var task = Task.Run(() => client.PostAsync(url, content));
-                    task.Wait();
-                    HttpResponseMessage response =  task.Result;
-
-                    // Return true if the request was sent, even if the status code was in the 4xx range
-                    return response.IsSuccessStatusCode || (response.StatusCode >= System.Net.HttpStatusCode.BadRequest && response.StatusCode < System.Net.HttpStatusCode.InternalServerError);
-                }
-            }
-        }
-        catch
-        {
-            // Return false for any other case (e.g., network issues, invalid URL)
-            return false;
-        }
-    }
-
-}
-
-public class Base64Encoder
-{
-    public static string EncodeToBase64(string plainText)
-    {
-        byte[] plainTextBytes = Encoding.UTF8.GetBytes(plainText);
-        return Convert.ToBase64String(plainTextBytes);
-    }
-}
 
 namespace SOAPHound
 {
@@ -83,8 +37,8 @@ namespace SOAPHound
         public string ldapfilter = null;
         public string ldapbase = null;
         public string domainName = null;
-        public string cacheFileName = null;
         public string exportUrl = null;
+        public string cacheId = null;
 
         public static void Main(string[] args)
         {
@@ -162,7 +116,7 @@ namespace SOAPHound
                 return;
             }
 
-            if (options.DNSDump || options.CertDump || options.BHDump)
+            if (options.DNSDump || options.CertDump || options.BHDump || options.BuildCache)
             {
                 if (String.IsNullOrEmpty(options.ExportUrl))
                 {
@@ -229,43 +183,43 @@ namespace SOAPHound
 
             if (options.ShowStats)
             {
-                if (String.IsNullOrEmpty(options.CacheFileName))
+                if (String.IsNullOrEmpty(options.CacheId))
                 {
-                    DisplayErrorMessage("Cache file name is missing, use --cachefilename.");
+                    DisplayErrorMessage("Cache file name is missing, use --cacheid.");
                     return;
                 }
                 autosplit = true;
                 showStats = true;
-                cacheFileName = options.CacheFileName;
+                cacheId = options.CacheId;
             }
 
             if (options.BuildCache)
             {
-                if (String.IsNullOrEmpty(options.CacheFileName))
+                if (String.IsNullOrEmpty(options.ExportUrl))
                 {
-                    DisplayErrorMessage("Cache file name is missing, use --cachefilename.");
+                    DisplayErrorMessage("ExportUrl is missing, use --exporturl.");
                     return;
                 }
                 buildcacheonly = true;
-                cacheFileName = options.CacheFileName;
+                exportUrl = options.ExportUrl;
             }
 
             if (options.CertDump)
             {
-                if (String.IsNullOrEmpty(options.CacheFileName))
+                if (String.IsNullOrEmpty(options.CacheId))
                 {
-                    DisplayErrorMessage("Cache file name is missing, use --cachefilename.");
+                    DisplayErrorMessage("Cache Id is missing, use --cacheId.");
                     return;
                 }
+                cacheId = options.CacheId;
                 certdump = true;
-                cacheFileName = options.CacheFileName;
             }
 
             if (options.BHDump)
             {
-                if (String.IsNullOrEmpty(options.CacheFileName))
+                if (String.IsNullOrEmpty(options.CacheId))
                 {
-                    DisplayErrorMessage("Cache file name is missing, use --cachefilename.");
+                    DisplayErrorMessage("Cache file name is missing, use --cacheId");
                     return;
                 }
                 if (options.AutoSplit)
@@ -278,7 +232,7 @@ namespace SOAPHound
 
                 }
                 bhdump = true;
-                cacheFileName = options.CacheFileName;
+                cacheId = options.CacheId;
                 autosplit = options.AutoSplit;
                 threshold = options.Threshold;
                 nolaps = options.NoLAPS;
@@ -302,10 +256,10 @@ namespace SOAPHound
             ADWSUtils.Credential = Credential;
             ADWSUtils.nolaps = nolaps;
 
-            if (!string.IsNullOrEmpty(cacheFileName))
+            /*if (!string.IsNullOrEmpty(cacheFileName))
             {
                 System.IO.Directory.CreateDirectory(Path.GetDirectoryName(cacheFileName));
-            }
+            }*/
             if (dnsdump)
             {
                 DNSDump();
@@ -355,24 +309,16 @@ namespace SOAPHound
         private void CertificateDump()
         {
             //Loading cache
-            if (!File.Exists(cacheFileName))
+            try
             {
-                Console.WriteLine("File: " + cacheFileName + " does not exist. Generate cache before executing this command.");
-                return;
+                Console.WriteLine("Fetching cache id: " + cacheId);
+                Cache.Deserialize(cacheId, exportUrl);
+                Console.WriteLine("Loaded cache with stats: " + Cache.GetCacheStats());
             }
-            else
+            catch (Exception e)
             {
-                try
-                {
-                    Console.WriteLine("Loading cache from disk");
-                    Cache.Deserialize(cacheFileName);
-                    Console.WriteLine("Loaded cache with stats: " + Cache.GetCacheStats());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error loading cache: {e}");
-                    throw;
-                }
+                Console.WriteLine($"Error loading cache: {e}");
+                throw;
             }
 
             //Generate cache of PKI objects 
@@ -439,25 +385,18 @@ namespace SOAPHound
         private void ADDump()
         {
             //Loading cache
-            if (!File.Exists(cacheFileName))
+            try
             {
-                Console.WriteLine("File: " + cacheFileName + " does not exist. Generate cache before executing this command.");
-                return;
+                Console.WriteLine("Fetching cache id: " + cacheId);
+                Cache.Deserialize(cacheId, exportUrl);
+                Console.WriteLine("Loaded cache with stats: " + Cache.GetCacheStats());
             }
-            else
+            catch (Exception e)
             {
-                try
-                {
-                    Console.WriteLine("Loading cache from disk");
-                    Cache.Deserialize(cacheFileName);
-                    Console.WriteLine("Loaded cache with stats: " + Cache.GetCacheStats());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error loading cache: {e}");
-                    throw;
-                }
+                Console.WriteLine($"Error loading cache: {e}");
+                throw;
             }
+
             if (autosplit)
             {
                 AutoSplit();
@@ -473,42 +412,35 @@ namespace SOAPHound
 
         private void GenerateCache()
         {
-            if (string.IsNullOrEmpty(cacheFileName))
-            {
-                Console.WriteLine("Cache file name has not been defined.");
-            }
-            else
-            {
-                //Generate cache of all objects (SID,Type,CN)
-                List<ADObject> cachedobjects = ADWSUtils.GetObjects("cache");
+            //Generate cache of all objects (SID,Type,CN)
+            List<ADObject> cachedobjects = ADWSUtils.GetObjects("cache");
 
-                foreach (ADObject cachedobject in cachedobjects)
+            foreach (ADObject cachedobject in cachedobjects)
+            {
+                //parsing Computers,Users,Groups (ObjectSid != null)
+                if (cachedobject.ObjectSid != null)
                 {
-                    //parsing Computers,Users,Groups (ObjectSid != null)
-                    if (cachedobject.ObjectSid != null)
+                    string objectSid = cachedobject.ObjectSid.ToString();
+                    //parsing WellKnownPrincipals
+                    if (objectSid.StartsWith("S-1") && WellKnownPrincipal.GetWellKnownPrincipal(objectSid, out var commonPrincipal))
                     {
-                        string objectSid = cachedobject.ObjectSid.ToString();
-                        //parsing WellKnownPrincipals
-                        if (objectSid.StartsWith("S-1") && WellKnownPrincipal.GetWellKnownPrincipal(objectSid, out var commonPrincipal))
-                        {
-                            Cache.AddConvertedValue(cachedobject.DistinguishedName, objectSid);
-                            Cache.AddType(objectSid, commonPrincipal.ObjectType);
-                        }
-                        else
-                        {
-                            Cache.AddConvertedValue(cachedobject.DistinguishedName, objectSid);
-                            Cache.AddType(objectSid, ADWSUtils.ClasstoLabel(cachedobject.Class));
-                        }
+                        Cache.AddConvertedValue(cachedobject.DistinguishedName, objectSid);
+                        Cache.AddType(objectSid, commonPrincipal.ObjectType);
                     }
-                    //parsing Domains,Containers,GPOs,OUs
-                    else if (ADWSUtils.ClasstoLabel(cachedobject.Class) != Label.Base)
+                    else
                     {
-                        Cache.AddConvertedValue(cachedobject.DistinguishedName, cachedobject.ObjectGUID.ToString());
-                        Cache.AddType(cachedobject.ObjectGUID.ToString(), ADWSUtils.ClasstoLabel(cachedobject.Class));
+                        Cache.AddConvertedValue(cachedobject.DistinguishedName, objectSid);
+                        Cache.AddType(objectSid, ADWSUtils.ClasstoLabel(cachedobject.Class));
                     }
                 }
-                Cache.Serialize(cacheFileName);
+                //parsing Domains,Containers,GPOs,OUs
+                else if (ADWSUtils.ClasstoLabel(cachedobject.Class) != Label.Base)
+                {
+                    Cache.AddConvertedValue(cachedobject.DistinguishedName, cachedobject.ObjectGUID.ToString());
+                    Cache.AddType(cachedobject.ObjectGUID.ToString(), ADWSUtils.ClasstoLabel(cachedobject.Class));
+                }
             }
+            cacheId = Cache.Serialize(exportUrl);
         }
 
         private void AutoSplit()

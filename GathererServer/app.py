@@ -7,11 +7,38 @@ from flask import Flask, request
 
 app = Flask(__name__)
 BUILD_DIR = 'build/'
+CACHE_DIR = 'cache/'
 
 def parsejson(data):
     json_object = json.loads(data)
     payload = json.dumps(json_object, indent=2)
     return payload
+
+def savecache(id, content):
+    try:
+        # Try to create the directory
+        os.makedirs(CACHE_DIR)
+        print(f"* Directory '{CACHE_DIR}' created successfully.")
+    except FileExistsError:
+        # If the directory already exists, just print a message
+        pass
+    content = parsejson(content)
+    _f = os.path.join(CACHE_DIR, f'{id.strip()}.json')
+    f = open(_f, 'w') 
+    f.write(content.strip())
+    f.close()
+    print(f"* Cache saved to: {_f}")
+
+def readcache(id):
+    try:
+        _f = os.path.join(CACHE_DIR, f'{id.strip()}.json')
+        f = open(_f, 'r')
+        payload = f.read()
+        f.close()
+        return base64.b64encode(payload.encode()).decode()
+    except Exception as e:
+        print(f"Error while reading CacheID: {id} as: {e}")
+        return None
 
 def recored(filename, content):
     try:
@@ -91,3 +118,18 @@ def output_catemplate():
     payload = parsejson(request.data.decode())
     recored("CATemplate.json", payload)
     return {'status': 'ok'}
+
+@app.route('/cache', methods=['POST', 'GET'])
+def gencache():
+    id = request.args.get('id')
+    if request.method == "POST":
+        payload = parsejson(request.data.decode())
+        savecache(id, payload)
+        return {'status': 'ok'}
+    if request.method == "GET":
+        content = readcache(id)
+        if not content:
+            return {'status': 'invalid id'}, 404
+        else:
+            return content
+    

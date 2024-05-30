@@ -204,6 +204,7 @@
     <Compile Include="ADWS\Reference.cs" />
     <Compile Include="Enums\DomainTrusts.cs" />
     <Compile Include="Enums\PKI.cs" />
+    <Compile Include="Helper.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="OutputTypes\GPOs.cs" />
     <Compile Include="OutputTypes\CANodes.cs" />
